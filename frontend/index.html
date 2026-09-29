@@ -374,35 +374,40 @@
 
           <div class="form-group">
             <label for="newPatientGrade">Grado del Estudiante *</label>
-            <select id="newPatientGrade" class="form-input" required>
+            <select id="newPatientGrade" class="form-input" required onchange="const rs = document.getElementById('newGradeRegularSection'); if(this.value === 'Regular'){ rs.style.display = 'flex'; } else { rs.style.display = 'none'; }">
               <option value="" disabled selected>Seleccionar grado...</option>
               <option value="Preescolar">Preescolar</option>
-              <option value="101">101</option>
-              <option value="102">102</option>
-              <option value="201">201</option>
-              <option value="202">202</option>
-              <option value="301">301</option>
-              <option value="302">302</option>
-              <option value="401">401</option>
-              <option value="402">402</option>
-              <option value="501">501</option>
-              <option value="502">502</option>
-              <option value="601">601</option>
-              <option value="602">602</option>
-              <option value="701">701</option>
-              <option value="702">702</option>
-              <option value="801">801</option>
-              <option value="802">802</option>
-              <option value="901">901</option>
-              <option value="902">902</option>
-              <option value="1001">1001</option>
-              <option value="1002">1002</option>
-              <option value="1003">1003</option>
-              <option value="1101">1101</option>
-              <option value="1102">1102</option>
-              <option value="1103">1103</option>
               <option value="Aceleración">Aceleración</option>
+              <option value="Regular">Grado Regular (1 a 11)</option>
             </select>
+            <div id="newGradeRegularSection" style="display: none; gap: 0.5rem; margin-top: 0.5rem;">
+              <div style="flex: 1;">
+                 <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Grado (1-11)</label>
+                 <select id="newPatientGradeLevel" class="form-input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                 </select>
+              </div>
+              <div style="flex: 1;">
+                 <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Grupo (1-5)</label>
+                 <select id="newPatientGradeGroup" class="form-input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                 </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -662,35 +667,40 @@
         </div>
         <div style="margin-bottom: 0.5rem;">
           <label style="display:block; margin-bottom: 0.25rem;">Grado:</label>
-          <select id="editPatientGrade" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+          <select id="editPatientGrade" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;" onchange="const rs = document.getElementById('editGradeRegularSection'); if(this.value === 'Regular'){ rs.style.display = 'flex'; } else { rs.style.display = 'none'; }">
             <option value="">Selecciona el grado</option>
             <option value="Preescolar">Preescolar</option>
-            <option value="101">101</option>
-            <option value="102">102</option>
-            <option value="201">201</option>
-            <option value="202">202</option>
-            <option value="301">301</option>
-            <option value="302">302</option>
-            <option value="401">401</option>
-            <option value="402">402</option>
-            <option value="501">501</option>
-            <option value="502">502</option>
-            <option value="601">601</option>
-            <option value="602">602</option>
-            <option value="701">701</option>
-            <option value="702">702</option>
-            <option value="801">801</option>
-            <option value="802">802</option>
-            <option value="901">901</option>
-            <option value="902">902</option>
-            <option value="1001">1001</option>
-            <option value="1002">1002</option>
-            <option value="1003">1003</option>
-            <option value="1101">1101</option>
-            <option value="1102">1102</option>
-            <option value="1103">1103</option>
             <option value="Aceleración">Aceleración</option>
+            <option value="Regular">Grado Regular (1 a 11)</option>
           </select>
+          <div id="editGradeRegularSection" style="display: none; gap: 0.5rem; margin-top: 0.5rem;">
+            <div style="flex: 1;">
+               <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Grado (1-11)</label>
+               <select id="editPatientGradeLevel" class="form-input" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+               </select>
+            </div>
+            <div style="flex: 1;">
+               <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Grupo (1-5)</label>
+               <select id="editPatientGradeGroup" class="form-input" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+               </select>
+            </div>
+          </div>
         </div>
         <div style="margin-bottom: 0.75rem;">
           <label style="display:block; margin-bottom: 0.25rem;">Acudiente:</label>

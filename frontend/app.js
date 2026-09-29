@@ -475,7 +475,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const lastName = document.getElementById('newPatientLastName') ? document.getElementById('newPatientLastName').value.trim() : '';
       const name = `${firstName} ${lastName}`.trim();
       const doc = document.getElementById('newPatientDoc').value.trim();
-      const grade = document.getElementById('newPatientGrade') ? document.getElementById('newPatientGrade').value : '';
+      let grade = document.getElementById('newPatientGrade') ? document.getElementById('newPatientGrade').value : '';
+      if (grade === 'Regular') {
+        const gradeLvl = document.getElementById('newPatientGradeLevel').value;
+        const gradeGrp = document.getElementById('newPatientGradeGroup').value;
+        grade = `${gradeLvl}-${gradeGrp}`;
+      }
       const guardian = document.getElementById('newPatientGuardian') ? document.getElementById('newPatientGuardian').value.trim() : '';
       const phone = document.getElementById('newPatientPhone').value.trim();
       const email = document.getElementById('newPatientEmail').value.trim();
@@ -1563,7 +1568,23 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('editPatientDoc').value = patient.document || '';
         document.getElementById('editPatientPhone').value = patient.phone || '';
         document.getElementById('editPatientEmail').value = patient.email || '';
-        document.getElementById('editPatientGrade').value = patient.grade || '';
+        const rs = document.getElementById('editGradeRegularSection');
+        if (patient.grade === 'Preescolar' || patient.grade === 'Aceleración') {
+          document.getElementById('editPatientGrade').value = patient.grade || '';
+          if (rs) rs.style.display = 'none';
+        } else if (patient.grade && patient.grade.includes('-')) {
+          document.getElementById('editPatientGrade').value = 'Regular';
+          if (rs) rs.style.display = 'flex';
+          const parts = patient.grade.split('-');
+          if (parts.length === 2) {
+             document.getElementById('editPatientGradeLevel').value = parts[0];
+             document.getElementById('editPatientGradeGroup').value = parts[1];
+          }
+        } else {
+          document.getElementById('editPatientGrade').value = '';
+          if (rs) rs.style.display = 'none';
+        }
+        
         document.getElementById('editPatientGuardian').value = patient.guardian || '';
         const allergiesInput = document.getElementById('editPatientAllergies');
         if (allergiesInput) allergiesInput.value = patient.allergies || '';
@@ -1586,11 +1607,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSaveEditInfo) {
     btnSaveEditInfo.addEventListener('click', async () => {
       const patientId = document.getElementById('patientNoteId').value;
+      
+      let editGrade = document.getElementById('editPatientGrade').value;
+      if (editGrade === 'Regular') {
+         const lvl = document.getElementById('editPatientGradeLevel').value;
+         const grp = document.getElementById('editPatientGradeGroup').value;
+         editGrade = `${lvl}-${grp}`;
+      }
+
       const data = {
         document: document.getElementById('editPatientDoc').value,
         phone: document.getElementById('editPatientPhone').value,
         email: document.getElementById('editPatientEmail').value,
-        grade: document.getElementById('editPatientGrade').value,
+        grade: editGrade,
         guardian: document.getElementById('editPatientGuardian').value,
         allergies: document.getElementById('editPatientAllergies') ? document.getElementById('editPatientAllergies').value : ''
       };
