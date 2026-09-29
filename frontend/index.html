@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroVínculo | Agenda Digital para Psico Orientación Escolar</title>
+  <meta name="description" content="NeuroVínculo es la agenda digital para psico orientación escolar. Organiza citas, horarios y seguimiento de estudiantes de manera sencilla, profesional y confiable.">
+  <meta name="keywords" content="agenda digital, psico orientacion escolar, salud mental escolar, bienestar emocional, citas orientadora, gestion de estudiantes, neurovinculo">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css?v=2">
+  <script src="app.js?v=2" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Overlay de Login -->
+  <div id="loginOverlay" class="login-overlay active">
+    <div class="login-modal">
+      <div class="text-center" style="margin-bottom: 1.5rem;">
+        <img src="logo.svg" alt="Logo" width="48" height="48">
+        <h2 style="margin-top: 0.5rem; color: #0f172a;">Acceso Restringido</h2>
+        <p style="color: #64748b; font-size: 0.9rem;">Ingrese sus credenciales para acceder a la agenda.</p>
+      </div>
+      <form id="loginForm">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #334155; font-size: 0.9rem;">Usuario</label>
+          <input type="text" id="loginUsername" required placeholder="Ingrese su usuario" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #334155; font-size: 0.9rem;">Contraseña</label>
+          <input type="password" id="loginPassword" required placeholder="Ingrese su contraseña" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+        </div>
+        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="
+          var u = document.getElementById('loginUsername').value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          var p = document.getElementById('loginPassword').value.toUpperCase();
+          if(u.includes('agenda') && p === 'IEFA2026') {
+            document.getElementById('loginOverlay').classList.remove('active');
+            document.getElementById('appMainContent').style.display = 'block';
+            localStorage.setItem('neurovinculo_token', 'dummy');
+            if(window.fetchAndRenderData) window.fetchAndRenderData();
+          } else {
+            alert('Credenciales incorrectas. Verifique usuario y contraseña.');
+          }
+        ">Ingresar Seguramente</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <div id="appMainContent" style="display: none;">
+    <!-- Fondos Decorativos Suaves -->
+    <div class="bg-blur-orb orb-top-left" aria-hidden="true"></div>
+    <div class="bg-blur-orb orb-middle-right" aria-hidden="true"></div>
+    <div class="bg-blur-orb orb-bottom-left" aria-hidden="true"></div>
+
+    <!-- Encabezado de la Aplicación (Header) -->
+    <header class="site-header" id="header">
+    <div class="header-container container">
+      <!-- Logo y Nombre -->
+      <a href="#inicio" class="brand-logo" aria-label="Ir al inicio de NeuroVínculo">
+        <img src="logo.svg" alt="Logo de NeuroVínculo" class="logo-icon" width="42" height="42">
+        <span class="brand-text">Neuro<span class="brand-accent">Vínculo</span></span>
+      </a>
+
+      <!-- Navegación CSS pura con checkbox para versión móvil -->
+      <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" aria-label="Abrir menú de navegación">
+      <label for="nav-toggle" class="nav-toggle-label" title="Menú">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </label>
+
+      <!-- Menú de Navegación -->
+      <nav class="nav-menu" id="navMenu">
+        <ul class="nav-list">
+          <li><a href="#inicio" class="nav-link">Inicio</a></li>
+          <li><a href="#agenda" class="nav-link">Agenda</a></li>
+          <li><a href="#calendario" class="nav-link">Calendario</a></li>
+          <li><a href="#pacientes" class="nav-link">Estudiantes / Pacientes</a></li>
+          <li><a href="#historial" class="nav-link">Historial</a></li>
+          <li><a href="#recordatorios" class="nav-link">Recordatorios</a></li>
+          <li><a href="#reportes" class="nav-link">Reportes</a></li>
+          <li><a href="#contacto" class="nav-link">Contacto</a></li>
+        </ul>
+        <div class="nav-action">
+          <button id="btnOpenNewAppointment" class="btn btn-sm btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+            <span>+ Nueva Cita</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. SECCIÓN PRINCIPAL (HERO / INICIO) -->
+    <section class="hero-section" id="inicio">
+      <div class="container hero-grid">
+        <!-- Texto y Presentación -->
+        <div class="hero-content">
+          <div class="badge-pill">
+            <span class="badge-dot"></span>
+            <span class="badge-text">Bienestar Emocional & Orientación Escolar</span>
+          </div>
+
+          <h1 class="hero-title">
+            Agenda Digital para <span class="text-highlight">Psico</span> <span class="text-highlight-secondary">Orientación</span>
+          </h1>
+
+          <p class="hero-description">
+            Organiza tus citas, horarios y seguimiento de estudiantes de manera sencilla, intuitiva y profesional. Una herramienta escolar diseñada para transmitir calma, confianza y eficiencia en el acompañamiento de psico orientación.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="#agenda" class="btn btn-primary btn-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Ver Citas de Hoy</span>
+            </a>
+          </div>
+
+          <!-- Métricas del Día -->
+          <div class="hero-stats">
+            <div class="stat-card">
+              <span class="stat-number" id="statTotalAppointments">0</span>
+              <span class="stat-label">Citas Programadas</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number" id="statTotalPatients">0</span>
+              <span class="stat-label">Estudiantes Registrados</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ilustración / Imagen Destacada del Hero -->
+        <div class="hero-visual">
+          <div class="hero-image-wrapper">
+            <img src="hero-bg.jpg" alt="Ilustración de Agenda Digital para Psico Orientación Escolar" class="hero-img" loading="eager">
+            <div class="hero-overlay-card" id="nextAppointmentCard" style="display: none;">
+              <div class="overlay-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8F9E73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div class="overlay-info" id="nextAppointmentInfo">
+                <strong>Próxima Cita en 15 min</strong>
+                <span>Aula Psico Orientación Escolar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SECCIÓN DE AGENDA -->
+    <section class="section agenda-section" id="agenda">
+      <div class="container">
+        <div class="section-header text-center">
+          <span class="section-badge">Control de Horarios</span>
+          <h2 class="section-title">
+            Agenda de Citas del Día
+            <button id="btnOpenNewAppointment2" class="btn btn-sm btn-primary" style="margin-left: 1rem; vertical-align: middle;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+              <span>+ Nueva Cita</span>
+            </button>
+          </h2>
+          <p class="section-subtitle">
+            Revisa y gestiona las citas de Psico Orientación Escolar por modalidad (Presencial o Virtual), filtra por estado o cancela según sea necesario.
+          </p>
+        </div>
+
+        <!-- Filtros Visuales Interáctivos de Citas -->
+        <div class="agenda-filters">
+          <button class="filter-btn active" data-filter="all" id="btnFilterAll">
+            Todas las Citas (<span id="countFilterAll">6</span>)
+          </button>
+          <button class="filter-btn" data-filter="presencial" id="btnFilterPresencial">
+            <span class="filter-dot dot-presencial"></span> Presencial (<span id="countFilterPresencial">3</span>)
+          </button>
+          <button class="filter-btn" data-filter="virtual" id="btnFilterVirtual">
+            <span class="filter-dot dot-virtual"></span> Virtual (<span id="countFilterVirtual">3</span>)
+          </button>
+        </div>
+
+        <!-- Tarjetas de Horarios / Citas -->
+        <div class="agenda-grid" id="agendaGrid">
+          
+          <!-- Las citas se cargarán dinámicamente desde la base de datos (ver app.js) -->
+          <div id="loadingAgenda" style="text-align: center; padding: 2rem;">Cargando citas...</div>
+
+        </div>
+      </div>
+    </section>
+    <!-- SECCIÓN DE HISTORIAL GENERAL -->
+    <section class="section historial-section" id="historial" style="background-color: #f1f5f9; padding: 3rem 0;">
+      <div class="container">
+        <div class="section-header text-center">
+          <span class="section-badge">Registro Histórico</span>
+          <h2 class="section-title">Historial General de Citas</h2>
+          <p class="section-subtitle">
+            Aquí podrás buscar y visualizar todas las citas, incluyendo las canceladas o pasadas.
+          </p>
+        </div>
+        
+        <div class="search-bar-container" style="margin-bottom: 2rem;">
+          <div class="search-input-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8F9E73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="historySearchInput" class="search-input" placeholder="Buscar en el historial por nombre o documento..." value="">
+          </div>
+        </div>
+
+        <div class="historial-grid" id="historialGrid" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="text-align: center; padding: 2rem;">Cargando historial...</div>
+        </div>
+      </div>
+    </section>
+    <!-- SECCIÓN DE CALENDARIO -->
+    <section class="section calendario-section" id="calendario" style="background-color: var(--bg-ice); padding: 4rem 0;">
+      <div class="container">
+        <div class="section-header text-center">
+          <span class="section-badge">Vista Mensual</span>
+          <h2 class="section-title">Calendario de Citas</h2>
+          <p class="section-subtitle">
+            Visualiza todas las citas agendadas en formato mensual.
+          </p>
+        </div>
+
+        <div id="calendarContainer" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <!-- Calendar will be generated dynamically by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SECCIÓN DE PACIENTES CON BUSCADOR EN TIEMPO REAL -->
+    <section class="section pacientes-section" id="pacientes">
+      <div class="container">
+        <div class="section-header text-center">
+          <span class="section-badge">Directorio Escolar</span>
+          <h2 class="section-title">Fichas de Estudiantes</h2>
+          <p class="section-subtitle">
+            Buscador dinámico de pacientes. Encuentra información por nombre, documento de identidad, teléfono o correo.
+          </p>
+        </div>
+
+        <!-- Barra de Búsqueda Interactiva (Campo limpio por defecto) -->
+        <div class="search-bar-container">
+          <div class="search-input-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8F9E73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="patientSearchInput" class="search-input" placeholder="Buscar por nombre, documento, teléfono o correo..." value="">
+            <button id="btnClearSearch" class="btn-clear-search" style="display: none;" title="Limpiar búsqueda">&times;</button>
+          </div>
+          <span class="search-tag" id="searchResultTag">Fichas listas para ingreso manual</span>
+        </div>
+
+        <!-- Elemento de mensaje cuando no hay resultados de búsqueda -->
+        <div id="noResultsMsg" class="no-results-box" style="display: none;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          <p>No se encontraron estudiantes o citas que coincidan con el término buscado.</p>
+        </div>
+
+        <!-- Grid de Tarjetas de Pacientes -->
+        <div class="pacientes-grid" id="pacientesGrid">
+          <!-- Los pacientes se cargarán dinámicamente desde la base de datos (ver app.js) -->
+          <div id="loadingPatients" style="text-align: center; padding: 2rem; grid-column: 1 / -1;">Cargando directorio de estudiantes...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SECCIÓN DE RECORDATORIOS -->
+    <section class="section recordatorios-section" id="recordatorios">
+      <div class="container">
+        <div class="section-header text-center">
+          <span class="section-badge">Notificaciones y Alertas</span>
+          <h2 class="section-title">Recordatorios Pendientes</h2>
+          <p class="section-subtitle">
+            Cajas destacadas con avisos de citas próximas y compromisos institucionales.
+          </p>
+        </div>
+
+        <div class="add-reminder-form" style="max-width: 600px; margin: 0 auto 2rem auto; display: flex; gap: 1rem;">
+          <input type="text" id="newReminderInput" class="form-input" placeholder="Escribe un nuevo recordatorio..." style="flex: 1;">
+          <button id="btnAddReminder" class="btn btn-primary">Añadir</button>
+        </div>
+
+        <div class="recordatorios-grid" id="recordatoriosGrid">
+          <!-- Los recordatorios se cargarán dinámicamente desde la base de datos (ver app.js) -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. SECCIÓN DE REPORTES -->
+    <section class="section reportes-section" id="reportes" style="background-color: var(--bg-ice); padding: 4rem 0;">
+      <div class="container">
+        <div class="section-header text-center">
+          <span class="section-badge">Estadísticas</span>
+          <h2 class="section-title">Reportes de Atención</h2>
+          <p class="section-subtitle">
+            Evidencia del total de casos atendidos.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 900px; margin: 0 auto;">
+          <!-- Último Mes -->
+          <div style="background: white; border-radius: 12px; padding: 2rem; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--accent-color);">
+            <h3 style="font-size: 1.2rem; color: #475569; margin-bottom: 1rem;">Último Mes</h3>
+            <div id="reportLastMonth" style="font-size: 3rem; font-weight: 800; color: var(--primary-color);">0</div>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">Casos Atendidos</p>
+          </div>
+          
+          <!-- Últimos 6 Meses -->
+          <div style="background: white; border-radius: 12px; padding: 2rem; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--primary-color);">
+            <h3 style="font-size: 1.2rem; color: #475569; margin-bottom: 1rem;">Últimos 6 Meses</h3>
+            <div id="reportLastSixMonths" style="font-size: 3rem; font-weight: 800; color: var(--primary-color);">0</div>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">Casos Atendidos</p>
+          </div>
+
+          <!-- Último Año -->
+          <div style="background: white; border-radius: 12px; padding: 2rem; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--secondary-color);">
+            <h3 style="font-size: 1.2rem; color: #475569; margin-bottom: 1rem;">Último Año</h3>
+            <div id="reportLastYear" style="font-size: 3rem; font-weight: 800; color: var(--primary-color);">0</div>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">Casos Atendidos</p>
+          </div>
+        </div>
+        
+        <div style="margin-top: 3rem; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 900px; margin-left: auto; margin-right: auto;">
+          <h3 style="text-align: center; font-size: 1.2rem; color: #475569; margin-bottom: 1.5rem;">Distribución de Casos por Motivo</h3>
+          <div style="position: relative; height: 350px; width: 100%;">
+            <canvas id="motivosChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+
+  </main>
+
+  <!-- MODAL: + NUEVA CITA / NUEVO PACIENTE -->
+  <div id="newAppointmentModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8F9E73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+          <h3>Registrar Nueva Cita de Psico Orientación</h3>
+        </div>
+        <button id="btnCloseNewAppointmentModal" class="modal-close-btn" title="Cerrar modal">&times;</button>
+      </div>
+
+      <form id="newAppointmentForm" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newPatientName">Nombre del Estudiante *</label>
+            <input type="text" id="newPatientName" class="form-input" placeholder="Ej. Juan Pablo" required value="">
+          </div>
+
+          <div class="form-group">
+            <label for="newPatientLastName">Apellido del Estudiante *</label>
+            <input type="text" id="newPatientLastName" class="form-input" placeholder="Ej. Mendoza" required value="">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newPatientDoc">Documento de Identidad *</label>
+            <input type="text" id="newPatientDoc" class="form-input" placeholder="Ej. 1092837465" required value="">
+          </div>
+
+          <div class="form-group">
+            <label for="newPatientGrade">Grado del Estudiante *</label>
+            <select id="newPatientGrade" class="form-input" required>
+              <option value="" disabled selected>Seleccionar grado...</option>
+              <option value="Preescolar">Preescolar</option>
+              <option value="101">101</option>
+              <option value="102">102</option>
+              <option value="201">201</option>
+              <option value="202">202</option>
+              <option value="301">301</option>
+              <option value="302">302</option>
+              <option value="401">401</option>
+              <option value="402">402</option>
+              <option value="501">501</option>
+              <option value="502">502</option>
+              <option value="601">601</option>
+              <option value="602">602</option>
+              <option value="701">701</option>
+              <option value="702">702</option>
+              <option value="801">801</option>
+              <option value="802">802</option>
+              <option value="901">901</option>
+              <option value="902">902</option>
+              <option value="1001">1001</option>
+              <option value="1002">1002</option>
+              <option value="1003">1003</option>
+              <option value="1101">1101</option>
+              <option value="1102">1102</option>
+              <option value="1103">1103</option>
+              <option value="Aceleración">Aceleración</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newPatientGuardian">Nombre del Acudiente (Opcional)</label>
+            <input type="text" id="newPatientGuardian" class="form-input" placeholder="Ej. María Mendoza">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newPatientPhone">Teléfono de Contacto (Opcional)</label>
+            <input type="tel" id="newPatientPhone" class="form-input" placeholder="Ej. +57 310 123 4567" value="">
+          </div>
+
+          <div class="form-group">
+            <label for="newPatientEmail">Correo Electrónico (Opcional)</label>
+            <input type="email" id="newPatientEmail" class="form-input" placeholder="Ej. juan.pablo@estudiante.edu.co" value="">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="newPatientAllergies">¿Es alérgico a algún medicamento? (Opcional)</label>
+            <input type="text" id="newPatientAllergies" class="form-input" placeholder="Ej. Penicilina, Ibuprofeno, etc.">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newAppointmentDate">Fecha de Atención *</label>
+            <input type="date" id="newAppointmentDate" class="form-input" required>
+            <div id="occupiedTimesWarning" style="margin-top: 0.5rem; font-size: 0.85rem; color: #A85A5A; display: none;"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="newAppointmentTimeStart">Hora de Inicio *</label>
+            <input type="time" id="newAppointmentTimeStart" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newAppointmentTimeEnd">Hora de Finalización *</label>
+            <input type="time" id="newAppointmentTimeEnd" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="newAppointmentModality">Modalidad de Sesión *</label>
+            <select id="newAppointmentModality" class="form-input" required>
+              <option value="Presencial" selected>Presencial</option>
+              <option value="Virtual">Virtual</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="newAppointmentType">Tipo de Consulta *</label>
+            <select id="newAppointmentType" class="form-input" required>
+              <option value="1" selected>Tipo 1</option>
+              <option value="2">Tipo 2</option>
+              <option value="3">Tipo 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #334155; margin-top: 0.5rem;">
+            <input type="checkbox" id="newAppointmentForce" style="width: 16px; height: 16px;" onchange="document.getElementById('extraSessionContainer').style.display = this.checked ? 'block' : 'none'">
+            Permitir agendar más sesiones (Forzar límite / Agendar cita adicional)
+          </label>
+        </div>
+
+        <div id="extraSessionContainer" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+          <h4 style="margin-top: 0; margin-bottom: 1rem; color: #0f172a; font-size: 0.95rem;">Programar Sesiones Adicionales (Opcional)</h4>
+          
+          <div class="form-group">
+            <label for="extraSessionType">Tipo de agendamiento adicional</label>
+            <select id="extraSessionType" class="form-input" onchange="window.toggleExtraSessionFields()">
+              <option value="single">Una cita adicional (Otra fecha/hora)</option>
+              <option value="weekly">Semanal (Misma hora, varias semanas)</option>
+              <option value="custom">Múltiples citas (Diferentes fechas y horas)</option>
+            </select>
+          </div>
+
+          <!-- Bloque para Cita Única o Semanal -->
+          <div id="extraSessionSingleWeekly">
+            <div class="form-row">
+              <div class="form-group">
+                <label id="lblExtraDate">Fecha de la siguiente cita</label>
+                <input type="date" id="extraAppointmentDate" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Hora de Inicio</label>
+                <input type="time" id="extraAppointmentTimeStart" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Hora de Fin</label>
+                <input type="time" id="extraAppointmentTimeEnd" class="form-input">
+              </div>
+            </div>
+            <div class="form-group" id="weeklyCountGroup" style="display: none; margin-top: 1rem;">
+              <label>¿Cuántas semanas en total deseas agendar? (Ej. 2, 3...)</label>
+              <input type="number" id="extraWeeklyCount" class="form-input" min="2" max="20" value="2">
+            </div>
+          </div>
+
+          <!-- Bloque para Múltiples Citas Personalizadas -->
+          <div id="extraSessionCustom" style="display: none;">
+            <div id="customSessionsList">
+              <div class="form-row custom-session-row" style="margin-bottom: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0;"><input type="date" class="form-input custom-date"></div>
+                <div class="form-group" style="margin-bottom: 0;"><input type="time" class="form-input custom-time"></div>
+                <div class="form-group" style="margin-bottom: 0;"><input type="time" class="form-input custom-time-end"></div>
+              </div>
+              <div class="form-row custom-session-row" style="margin-bottom: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0;"><input type="date" class="form-input custom-date"></div>
+                <div class="form-group" style="margin-bottom: 0;"><input type="time" class="form-input custom-time"></div>
+                <div class="form-group" style="margin-bottom: 0;"><input type="time" class="form-input custom-time-end"></div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline" onclick="window.addCustomSessionRow()" style="margin-top: 0.5rem;">+ Añadir otra cita</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="newAppointmentLocation">Lugar de Atención *</label>
+          <!-- Campo con el valor por defecto Aula Psico Orientación Escolar -->
+          <input type="text" id="newAppointmentLocation" class="form-input form-input-readonly" value="Aula Psico Orientación Escolar" required>
+          <small class="form-help-text">Ubicación predeterminada institucional para sesiones presenciales.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="newAppointmentReason">Motivo de Psico Orientación *</label>
+          <textarea id="newAppointmentReason" class="form-input form-textarea" rows="3" placeholder="Describe brevemente el motivo del acompañamiento escolar..." required></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelModalForm" class="btn btn-outline">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cita en Agenda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PIE DE PÁGINA (FOOTER & CONTACTO) -->
+  <footer class="site-footer" id="contacto">
+    <div class="container footer-grid">
+      
+      <!-- Columna 1: Marca e Info de Contacto -->
+      <div class="footer-col brand-col">
+        <a href="#inicio" class="brand-logo footer-logo">
+          <img src="logo.svg" alt="NeuroVínculo Logo" width="36" height="36">
+          <span class="brand-text">Neuro<span class="brand-accent">Vínculo</span></span>
+        </a>
+        <p class="footer-desc">
+          Agenda digital escolar diseñada para optimizar la gestión de Psico Orientación Escolar, promoviendo el bienestar emocional con calidez y tecnología.
+        </p>
+
+        <div class="contact-info-list">
+          <div class="contact-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C89F7D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Aula Psico Orientación Escolar, Edificio Principal</span>
+          </div>
+          <div class="contact-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C89F7D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Dirección: carrera49#139sur_31</span>
+          </div>
+          <div class="contact-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C89F7D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Teléfono: 3207275807</span>
+          </div>
+          <div class="contact-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C89F7D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>Correo: secretaria@iefedericoangel.edu.co</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna 3: Ayuda del Servicio -->
+      <div class="footer-col">
+        <h4 class="footer-title">Ayuda del Servicio</h4>
+        <ul class="footer-nav-list">
+          <li><a href="#contacto">Manual de Psico Orientación</a></li>
+          <li><a href="#contacto">Soporte Técnico Escolar</a></li>
+          <li><a href="#contacto">Guía de Privacidad y Confidencialidad</a></li>
+          <li><a href="#contacto">Recursos de Salud Mental para Estudiantes</a></li>
+          <li><a href="#contacto">Protocolos de Atención Emocional</a></li>
+        </ul>
+      </div>
+
+      <!-- Columna 4: Preguntas Frecuentes (FAQ Accordion) -->
+      <div class="footer-col faq-col">
+        <h4 class="footer-title">Preguntas Frecuentes (FAQ)</h4>
+        
+        <div class="faq-accordion">
+          
+          <details class="faq-item" open>
+            <summary class="faq-question">
+              <span>¿Dónde se realizan las citas presenciales?</span>
+              <svg class="faq-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="faq-answer">
+              Por defecto, todas las citas presenciales de acompañamiento se llevan a cabo en el <strong>Aula Psico Orientación Escolar</strong> de la institución.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>¿Cómo funciona el filtro por modalidad?</span>
+              <svg class="faq-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="faq-answer">
+              Al seleccionar "Presencial" únicamente verás citas en consultorio; al marcar "Virtual" verás sesiones en línea vía videollamada.
+            </p>
+          </details>
+
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Barra Inferior de Derechos -->
+    <div class="footer-bottom">
+      <div class="container footer-bottom-flex">
+        <p class="copyright-text">
+          © 2026 <strong>NeuroVínculo</strong> — Agenda Digital para Psico Orientación Escolar.
+        </p>
+        <p class="footer-credits">
+          Diseñado para optimizar la gestión y bienestar emocional en la orientación escolar.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Ficha de Estudiante -->
+  <div id="patientNoteModal" class="login-overlay">
+    <div class="login-modal" style="max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <h3 style="margin: 0; color: #0f172a;" id="patientNoteName">Ficha del Estudiante</h3>
+        <button type="button" id="btnToggleEditInfo" class="btn btn-xs btn-outline" style="padding: 0.15rem 0.5rem; font-size: 0.75rem; display: none;">Editar Datos</button>
+      </div>
+      <div id="patientNoteInfo" style="margin-bottom: 1rem; font-size: 0.85rem; color: #475569; background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid #e2e8f0; display: none;"></div>
+      <div id="patientEditInfoForm" style="margin-bottom: 1rem; font-size: 0.85rem; background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid #cbd5e1; display: none;">
+        <div style="margin-bottom: 0.5rem;">
+          <label style="display:block; margin-bottom: 0.25rem;">Documento:</label>
+          <input type="text" id="editPatientDoc" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 0.5rem;">
+          <label style="display:block; margin-bottom: 0.25rem;">Teléfono:</label>
+          <input type="text" id="editPatientPhone" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 0.5rem;">
+          <label style="display:block; margin-bottom: 0.25rem;">Correo:</label>
+          <input type="email" id="editPatientEmail" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 0.5rem;">
+          <label style="display:block; margin-bottom: 0.25rem;">Grado:</label>
+          <select id="editPatientGrade" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <option value="">Selecciona el grado</option>
+            <option value="Preescolar">Preescolar</option>
+            <option value="101">101</option>
+            <option value="102">102</option>
+            <option value="201">201</option>
+            <option value="202">202</option>
+            <option value="301">301</option>
+            <option value="302">302</option>
+            <option value="401">401</option>
+            <option value="402">402</option>
+            <option value="501">501</option>
+            <option value="502">502</option>
+            <option value="601">601</option>
+            <option value="602">602</option>
+            <option value="701">701</option>
+            <option value="702">702</option>
+            <option value="801">801</option>
+            <option value="802">802</option>
+            <option value="901">901</option>
+            <option value="902">902</option>
+            <option value="1001">1001</option>
+            <option value="1002">1002</option>
+            <option value="1003">1003</option>
+            <option value="1101">1101</option>
+            <option value="1102">1102</option>
+            <option value="1103">1103</option>
+            <option value="Aceleración">Aceleración</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 0.75rem;">
+          <label style="display:block; margin-bottom: 0.25rem;">Acudiente:</label>
+          <input type="text" id="editPatientGuardian" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 0.75rem;">
+          <label style="display:block; margin-bottom: 0.25rem; color: #ef4444;">Alergias a Medicamentos:</label>
+          <input type="text" id="editPatientAllergies" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <div style="text-align: right;">
+          <button type="button" id="btnCancelEditInfo" class="btn btn-xs btn-outline" style="margin-right: 0.5rem;">Cancelar</button>
+          <button type="button" id="btnSaveEditInfo" class="btn btn-xs btn-primary">Guardar Datos</button>
+        </div>
+      </div>
+      <form id="patientNoteForm">
+        <input type="hidden" id="patientNoteId">
+        <div style="margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label style="color: #334155; font-size: 0.9rem; margin: 0;">Notas y Observaciones</label>
+            <button type="button" id="btnEditPatientNotes" class="btn btn-xs btn-outline" style="display: none; padding: 0.15rem 0.5rem; font-size: 0.75rem;">Editar</button>
+          </div>
+          <textarea id="patientNoteContent" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; resize: vertical;" placeholder="Escribe aquí las notas del acompañamiento..."></textarea>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #334155; font-size: 0.9rem;">Remitir a:</label>
+          <select id="patientNoteReferral" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+            <option value="">-- No remitir --</option>
+            <option value="EPS">EPS</option>
+            <option value="Secretaría de salud">Secretaría de salud</option>
+            <option value="Secretaría de la mujer">Secretaría de la mujer</option>
+            <option value="Comisaria de familia">Comisaria de familia</option>
+            <option value="CAPL">CAPL</option>
+            <option value="Secretaría de educación">Secretaría de educación</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #334155; font-size: 0.9rem;">Historial de Citas</label>
+          <div id="patientHistoryList" style="max-height: 150px; overflow-y: auto; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem;">
+            <div style="text-align: center; color: #64748b; font-size: 0.85rem;">Cargando historial...</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-outline" id="btnCloseNoteModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Ficha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer style="margin-top: 4rem; padding: 2rem 0; background-color: var(--bg-card); border-top: 1px solid var(--border-light); text-align: center;">
+    <div class="container">
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">© 2026 NeuroVínculo. Todos los derechos reservados.</p>
+      <!-- Botón de Cerrar Sesión (más abajo) -->
+      <button id="btnLogout" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar Sesión Segura
+      </button>
+    </div>
+  </footer>
+  </div>
+</body>
+</html>

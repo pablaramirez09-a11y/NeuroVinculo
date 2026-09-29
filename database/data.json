@@ -1,0 +1,44 @@
+{
+  "patients": [
+    {
+      "id": 1,
+      "name": "Juan Pérez",
+      "document": "100123456",
+      "phone": "+57 300 123 4567",
+      "email": "juan@example.com"
+    },
+    {
+      "id": 2,
+      "name": "María Gómez",
+      "document": "100765432",
+      "phone": "+57 310 987 6543",
+      "email": "maria@example.com"
+    }
+  ],
+  "appointments": [
+    {
+      "id": 1,
+      "patient_id": 1,
+      "patient_name": "Juan Pérez",
+      "document": "100123456",
+      "date": "2026-08-11",
+      "time_start": "08:00",
+      "time_end": "09:00",
+      "modality": "presencial",
+      "reason": "Acompañamiento Emocional (Manejo de Ansiedad Escolar)",
+      "status": "confirmed"
+    },
+    {
+      "id": 2,
+      "patient_id": 2,
+      "patient_name": "María Gómez",
+      "document": "100765432",
+      "date": "2026-08-11",
+      "time_start": "09:30",
+      "time_end": "10:30",
+      "modality": "virtual",
+      "reason": "Psico Orientación Vocacional & Proyecto de Vida",
+      "status": "confirmed"
+    }
+  ]
+}
