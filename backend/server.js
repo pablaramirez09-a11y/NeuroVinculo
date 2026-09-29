@@ -20,19 +20,33 @@ app.use(express.urlencoded({ extended: true }));
 
 const dataFilePath = path.join(__dirname, '../database/data.json');
 
-// Helper para leer base de datos JSON
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = 'https://uglribyijrwkrsqpuctx.supabase.co';
+const supabaseKey = 'sb_publishable_gN6bkMtvehOrNUHeIuYR1Q_QTFTLuiu';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Helper para leer base de datos JSON desde Supabase
 async function readDB() {
   try {
-    const data = await fs.readFile(dataFilePath, 'utf8');
-    return JSON.parse(data);
+    const { data, error } = await supabase.from('json_db').select('data').eq('id', 1).single();
+    if (data && data.data) {
+      return data.data;
+    }
+    return { patients: [], appointments: [], activity_logs: [] };
   } catch (error) {
+    console.error('Error reading from Supabase:', error);
     return { patients: [], appointments: [], activity_logs: [] };
   }
 }
 
-// Helper para escribir base de datos JSON
+// Helper para escribir base de datos JSON a Supabase
 async function writeDB(data) {
-  await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    await supabase.from('json_db').upsert({ id: 1, data: data });
+  } catch (error) {
+    console.error('Error writing to Supabase:', error);
+  }
 }
 
 // Helper para registrar actividad
@@ -306,6 +320,5 @@ app.get('*', (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(port, () => {
-  console.log(`Servidor de NeuroVínculo corriendo en http://localhost:${port} (Modo JSON Seguro)`);
+export default app;
 });
